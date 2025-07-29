@@ -1,0 +1,10 @@
+# All the included libraries
+
+bitstring
+# binascii - already included in python
+python-docx
+reedsolo
+numpy
+biopython
+pytest 
+colorama==0.4.6 
