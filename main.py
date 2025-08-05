@@ -18,7 +18,7 @@ from encoder.constraints import (
     has_long_homopolymers, 
     contains_unstable_motifs
 )
-from dnaio.file_writer import write_fasta
+from dnaio.file_writer import write_fasta, write_txt
 from decoder import decode_dna_sequence
 
 
