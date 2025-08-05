@@ -1,10 +1,31 @@
-# All the included libraries
+# DNA Storage Application Dependencies
 
-bitstring
-# binascii - already included in python
-python-docx
-reedsolo
-numpy
-biopython
-pytest 
+# Core DNA encoding/decoding
+bitstring==4.3.1
+reedsolo==1.7.0
+
+# File processing
+python-docx==1.2.0
+
+# Web framework
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+
+# Scientific computing
+numpy==1.24.3
+pandas==2.0.3
+scipy==1.11.1
+
+# Visualization (optional)
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# Development tools
+pytest==7.4.0
+pytest-cov==4.1.0
+black==23.7.0
+flake8==6.0.0
+
+# Utilities
 colorama==0.4.6 
