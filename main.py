@@ -1,12 +1,24 @@
-"""Main runner script for DNA encoding experiment."""
+"""
+Command-line interface for DNA encoding/decoding.
+
+This module provides a CLI for encoding files to DNA sequences and decoding
+DNA sequences back to original files. It's useful for batch processing and testing.
+"""
 
 import argparse
 import os
+from pathlib import Path
+
 from dnaio.file_reader import convert_file_to_binary, read_fasta_with_metadata
 from encoder.base_mapping import binary_to_base4, base4_to_dna
 from encoder.error_correction import add_reed_solomon
-from encoder.constraints import enforce_constraints, check_gc_content, has_long_homopolymers, contains_unstable_motifs
-from dnaio.file_writer import write_txt, write_fasta
+from encoder.constraints import (
+    enforce_constraints, 
+    check_gc_content, 
+    has_long_homopolymers, 
+    contains_unstable_motifs
+)
+from dnaio.file_writer import write_fasta
 from decoder import decode_dna_sequence
 
 
