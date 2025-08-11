@@ -54,15 +54,34 @@ export default function ResultsSection({
 
   const handleDownload = () => {
     if (mode === 'encode' && encodeResult) {
-      const blob = new Blob([encodeResult.dna_sequence], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `${fileName.split(".")[0]}_dna_sequence.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      // Download the FASTA file from the backend (contains both sequence and metadata)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
+
+      // Extract just the filename from the full path
+      const fileName = encodeResult.output_file.split(/[/\\]/).pop() || 'dna_sequence.fasta'
+      const filePath = encodeURIComponent(fileName)
+
+      fetch(`${backendUrl}/api/download/${filePath}`)
+        .then(response => {
+          if (response.ok) {
+            return response.blob()
+          }
+          throw new Error(`Download failed with status: ${response.status}`)
+        })
+        .then(blob => {
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = `${fileName.split(".")[0]}_dna_sequence.fasta`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        })
+        .catch(error => {
+          console.error('Download error:', error)
+          alert('Failed to download FASTA file. Please try again.')
+        })
     } else if (mode === 'decode' && decodeResult) {
       // Download the decoded file from the backend
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
@@ -82,7 +101,22 @@ export default function ResultsSection({
           const url = URL.createObjectURL(blob)
           const a = document.createElement("a")
           a.href = url
-          a.download = decodeResult.original_filename || 'decoded_file'
+
+          // Ensure the downloaded file has the correct extension
+          let downloadFilename = decodeResult.original_filename || 'decoded_file'
+          if (decodeResult.detected_file_type && !downloadFilename.endsWith(decodeResult.detected_file_type)) {
+            // If the original filename doesn't have the detected extension, add it
+            const baseName = downloadFilename.split('.')[0]
+            downloadFilename = baseName + decodeResult.detected_file_type
+          }
+
+          a.download = downloadFilename
+          console.log('Downloading file:', {
+            originalFilename: decodeResult.original_filename,
+            detectedFileType: decodeResult.detected_file_type,
+            finalDownloadName: downloadFilename,
+            fileSize: decodeResult.file_size
+          })
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)
@@ -231,6 +265,21 @@ export default function ResultsSection({
                     <p className={`text-2xl font-bold ${encodeResult.has_unstable_motifs ? 'text-red-400' : 'text-green-400'}`}>
                       {encodeResult.has_unstable_motifs ? 'Present' : 'None'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Metadata Information */}
+                <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Info className="h-4 w-4 text-cyan-400" />
+                    <span className="text-sm font-medium text-cyan-400">Metadata Included</span>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-2">
+                    This DNA sequence includes constraint-aware metadata for proper decoding.
+                    The downloaded FASTA file contains both the main sequence and metadata sections.
+                  </p>
+                  <div className="text-xs text-gray-400">
+                    <span className="font-medium">Metadata length:</span> {encodeResult.metadata?.length || 0} offsets
                   </div>
                 </div>
               </div>
