@@ -109,19 +109,16 @@ async def encode_file(
         # 3. Convert to base-4
         base4_digits = binary_to_base4(corrected_data)
         
-        # 4. Map to DNA (now returns both sequence and metadata)
+        # 4. Map to DNA (constraint-aware, returns both sequence and metadata)
         dna_sequence, metadata = base4_to_dna(base4_digits)
         
-        # 5. Enforce constraints
-        dna_sequence = enforce_constraints(dna_sequence)
-        
-        # 6. Check constraints
+        # 5. Check constraints
         gc_content = check_gc_content(dna_sequence)
         has_homopolymers = has_long_homopolymers(dna_sequence)
         has_motifs = contains_unstable_motifs(dna_sequence, motif_list)
         
-        # 7. Write output
-        write_fasta(str(temp_output), dna_sequence, metadata=metadata)
+        # 6. Write output
+        write_fasta(str(temp_output), dna_sequence, metadata=metadata, original_filename=file.filename)
         
         # Clean up input file
         temp_input.unlink()
@@ -168,14 +165,23 @@ async def decode_file(
         with open(temp_input, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Read DNA sequence and metadata
-        dna_sequence, metadata = read_fasta_with_metadata(str(temp_input))
+        # Read DNA sequence, metadata, and original filename
+        dna_sequence, metadata, original_filename = read_fasta_with_metadata(str(temp_input))
         
         # Decode the data
         decoded_data = decode_dna_sequence(dna_sequence, metadata, nsym=nsym)
         
-        # Detect the original file type
-        detected_extension = detect_file_type_from_binary(decoded_data)
+        # Use original filename if available, otherwise detect file type
+        if original_filename:
+            # Extract extension from original filename
+            import os
+            _, detected_extension = os.path.splitext(original_filename)
+            if not detected_extension:
+                # Fallback to detection if no extension in original filename
+                detected_extension = detect_file_type_from_binary(decoded_data)
+        else:
+            # Fallback to detection if no original filename stored
+            detected_extension = detect_file_type_from_binary(decoded_data)
         
         # Add extension to output file
         temp_output = temp_output.with_suffix(detected_extension)
@@ -188,7 +194,7 @@ async def decode_file(
         temp_input.unlink()
         
         return DecodeResponse(
-            original_filename=file.filename,  # Use the uploaded file name
+            original_filename=original_filename or file.filename,  # Use original filename if available
             file_size=len(decoded_data),
             detected_file_type=detected_extension,
             output_file=str(temp_output)
@@ -219,9 +225,20 @@ async def download_file(file_path: str):
         else:
             raise HTTPException(status_code=404, detail=f"File not found: {decoded_path}")
     
+    # Try to get the original filename from the FASTA file
+    original_filename = None
+    try:
+        if full_path.suffix == '.fasta':
+            dna_sequence, metadata, original_filename = read_fasta_with_metadata(str(full_path))
+    except:
+        pass
+    
+    # Use original filename if available, otherwise use the file's name
+    download_filename = original_filename if original_filename else full_path.name
+    
     return FileResponse(
         path=str(full_path),
-        filename=full_path.name,
+        filename=download_filename,
         media_type='application/octet-stream'
     )
 

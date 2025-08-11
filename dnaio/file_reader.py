@@ -42,17 +42,17 @@ def read_mp3_file(filepath: str) -> bytes:
         return f.read()
 
 
-def read_fasta_with_metadata(filepath: str) -> tuple[str, list[int]]:
-    """Read a FASTA file containing both a main DNA sequence and metadata DNA sequence.
+def read_fasta_with_metadata(filepath: str) -> tuple[str, list[int], str]:
+    """Read a FASTA file containing main DNA sequence, metadata, and original filename.
     
     Args:
         filepath (str): Path to the FASTA file.
         
     Returns:
-        tuple[str, list[int]]: Main DNA sequence and metadata list.
+        tuple[str, list[int], str]: Main DNA sequence, metadata list, and original filename.
     """
     from Bio import SeqIO
-    from dnaio.file_writer import decode_metadata_constraint_aware
+    from dnaio.file_writer import decode_metadata_constraint_aware, decode_filename_from_dna
     
     records = list(SeqIO.parse(filepath, "fasta"))
     
@@ -62,14 +62,27 @@ def read_fasta_with_metadata(filepath: str) -> tuple[str, list[int]]:
     # First record is the main DNA sequence
     main_dna = str(records[0].seq)
     
-    # Second record (if present) is the metadata
+    # Second record (if present) - check if it's metadata or filename
     metadata = []
-    if len(records) >= 2:
-        metadata_dna = str(records[1].seq)
-        # Decode metadata using constraint-aware decoding
-        metadata = decode_metadata_constraint_aware(metadata_dna)
+    original_filename = None
     
-    return main_dna, metadata
+    if len(records) >= 2:
+        second_record_id = records[1].id
+        if second_record_id.endswith('_metadata'):
+            # Second record is metadata
+            metadata_dna = str(records[1].seq)
+            metadata = decode_metadata_constraint_aware(metadata_dna)
+            
+            # Third record (if present) is the original filename
+            if len(records) >= 3:
+                filename_dna = str(records[2].seq)
+                original_filename = decode_filename_from_dna(filename_dna)
+        elif second_record_id.endswith('_filename'):
+            # Second record is filename (no metadata)
+            filename_dna = str(records[1].seq)
+            original_filename = decode_filename_from_dna(filename_dna)
+    
+    return main_dna, metadata, original_filename
 
 
 def convert_file_to_binary(filepath: str) -> bytes:

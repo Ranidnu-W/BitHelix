@@ -93,13 +93,10 @@ def encode_file(input_file: str, output_file: str, nsym: int = 10, motifs: list 
     # 3. Convert to base-4
     base4_digits = binary_to_base4(corrected_data)
 
-    # 4. Map to DNA (now returns both sequence and metadata)
+    # 4. Map to DNA (constraint-aware, returns both sequence and metadata)
     dna_sequence, metadata = base4_to_dna(base4_digits)
 
-    # 5. Enforce constraints
-    dna_sequence = enforce_constraints(dna_sequence)
-
-    # 6. Report constraints
+    # 5. Check constraints
     gc_content = check_gc_content(dna_sequence)
     has_homopolymers = has_long_homopolymers(dna_sequence)
     has_motifs = contains_unstable_motifs(dna_sequence, motifs)
@@ -107,10 +104,11 @@ def encode_file(input_file: str, output_file: str, nsym: int = 10, motifs: list 
     print(f'Long homopolymers: {has_homopolymers}')
     print(f'Unstable motifs present: {has_motifs}')
 
-    # 7. Write output
+    # 6. Write output with original filename
     output_file = ensure_output_dir(output_file)
+    original_filename = os.path.basename(input_file)
     if output_file.endswith('.fasta'):
-        write_fasta(output_file, dna_sequence, metadata=metadata)
+        write_fasta(output_file, dna_sequence, metadata=metadata, original_filename=original_filename)
     elif output_file.endswith('.txt'):
         write_txt(output_file, dna_sequence)
     else:
@@ -119,14 +117,22 @@ def encode_file(input_file: str, output_file: str, nsym: int = 10, motifs: list 
 
 def decode_file(input_file: str, output_file: str, nsym: int = 10):
     """Decode a DNA file back to the original data with automatic file type detection."""
-    # Read DNA sequence and metadata
-    dna_sequence, metadata = read_fasta_with_metadata(input_file)
+    # Read DNA sequence, metadata, and original filename
+    dna_sequence, metadata, original_filename = read_fasta_with_metadata(input_file)
     
     # Decode the data
     decoded_data = decode_dna_sequence(dna_sequence, metadata, nsym=nsym)
     
-    # Detect the original file type
-    detected_extension = detect_file_type_from_binary(decoded_data)
+    # Use original filename if available, otherwise detect file type
+    if original_filename:
+        # Extract extension from original filename
+        _, detected_extension = os.path.splitext(original_filename)
+        if not detected_extension:
+            # Fallback to detection if no extension in original filename
+            detected_extension = detect_file_type_from_binary(decoded_data)
+    else:
+        # Fallback to detection if no original filename stored
+        detected_extension = detect_file_type_from_binary(decoded_data)
     
     # If no extension provided or different extension, use the detected one
     if not os.path.splitext(output_file)[1] or os.path.splitext(output_file)[1] != detected_extension:
@@ -141,6 +147,8 @@ def decode_file(input_file: str, output_file: str, nsym: int = 10):
         f.write(decoded_data)
     
     print(f"Decoded data written to {output_file} (detected type: {detected_extension})")
+    if original_filename:
+        print(f"Original filename: {original_filename}")
 
 
 def main():

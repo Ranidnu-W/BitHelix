@@ -60,7 +60,18 @@ def decode_metadata_constraint_aware(metadata_dna: str) -> list[int]:
     return metadata
 
 
-def write_fasta(filepath: str, dna_sequence: str, header: str = "DNA_Sequence", metadata: list[int] = None) -> None:
+def decode_filename_from_dna(filename_dna: str) -> str:
+    """Decode filename from base64 encoding."""
+    # Decode from base64
+    import base64
+    try:
+        filename_bytes = base64.b64decode(filename_dna.encode('ascii'))
+        return filename_bytes.decode('utf-8')
+    except:
+        return None
+
+
+def write_fasta(filepath: str, dna_sequence: str, header: str = "DNA_Sequence", metadata: list[int] = None, original_filename: str = None) -> None:
     """Write a DNA sequence (and optional metadata) to a .fasta file using Biopython.
     
     Args:
@@ -68,6 +79,7 @@ def write_fasta(filepath: str, dna_sequence: str, header: str = "DNA_Sequence", 
         dna_sequence (str): DNA sequence string.
         header (str): Header for the main DNA sequence.
         metadata (list[int], optional): Metadata bitstream to encode as DNA and include in the file.
+        original_filename (str, optional): Original filename to preserve for decoding.
     """
     from Bio.Seq import Seq
     from Bio.SeqRecord import SeqRecord
@@ -85,5 +97,14 @@ def write_fasta(filepath: str, dna_sequence: str, header: str = "DNA_Sequence", 
         metadata_dna = encode_metadata_constraint_aware(metadata)
         metadata_record = SeqRecord(Seq(metadata_dna), id=f"{header}_metadata", description="")
         records.append(metadata_record)
+    
+    # Add original filename as a separate record if provided
+    if original_filename is not None:
+        # Encode filename as base64 to ensure ASCII compatibility
+        import base64
+        filename_bytes = original_filename.encode('utf-8')
+        filename_b64 = base64.b64encode(filename_bytes).decode('ascii')
+        filename_record = SeqRecord(Seq(filename_b64), id=f"{header}_filename", description="")
+        records.append(filename_record)
     
     SeqIO.write(records, filepath, "fasta") 
