@@ -20,7 +20,7 @@ A full-stack web application for encoding and decoding files to/from DNA sequenc
 - **Results Display**: Detailed analysis with DNA sequence visualization
 - **Download Support**: Export DNA sequences and decoded files
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.8+
@@ -113,7 +113,7 @@ DNA_Python_Cursor/
 ### Download File
 - **GET** `/api/download/{file_id}`
 
-## 🧪 Usage Examples
+## Usage Examples
 
 ### Using the Web Interface
 
@@ -138,7 +138,7 @@ python main.py encode input.txt output.fasta
 python main.py decode input.fasta output.txt
 ```
 
-## 🔬 Supported File Types
+## Supported File Types
 
 ### Encoding (Input)
 - Text files (.txt)
@@ -152,7 +152,7 @@ python main.py decode input.fasta output.txt
 ### Decoding (Input)
 - FASTA files (.fasta, .fa, .fas)
 
-## 📊 Analysis Features
+##  Analysis Features
 
 ### DNA Sequence Analysis
 - **GC Content**: Percentage of G+C bases
@@ -166,7 +166,7 @@ python main.py decode input.fasta output.txt
 - Configurable correction symbols
 - Data integrity validation
 
-## 🛠️ Development
+## Development
 
 ### Backend Development
 ```bash
@@ -194,13 +194,13 @@ npm run build
 npm run lint
 ```
 
-## 🔍 API Documentation
+##  API Documentation
 
 When the backend is running, visit:
 - **Interactive API Docs**: http://localhost:8000/docs
 - **Alternative Docs**: http://localhost:8000/redoc
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -212,7 +212,7 @@ When the backend is running, visit:
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - DNA encoding/decoding algorithms
 - FastAPI for the backend API
